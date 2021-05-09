@@ -1,5 +1,6 @@
 import string
-import re
+
+
 
 from langdetect import detect
 import re
@@ -30,3 +31,7 @@ def FindMentions(text):
 def clearUsername(username):
     screenname = username.replace(username[:1], '')
     return screenname
+
+def remove_emoji(string):
+    emoji_pattern = re.compile("[\P{L}&&\P{D}&&\P{Z}&&\P{M}]", flags=re.UNICODE)
+    return emoji_pattern.sub(r'', string)

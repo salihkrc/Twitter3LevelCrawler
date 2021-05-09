@@ -4,6 +4,7 @@
 ###############################################################################
 import threading
 import itertools
+
 import re
 from csv import *
 import tweepy
@@ -50,11 +51,13 @@ mutex = threading.Lock()  # lock for the threads
 
 
 def Collector(CONSUMER_KEY, CONSUMER_SECRET,ACCESS_KEY, ACCESS_SECRET, seed_user, user_from_list):
+    global new_user
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
     api = tweepy.API(auth)
     local_usersList = []
-    tweets_from_user = api.user_timeline(screen_name=user_from_list, count=100, exclude_replies=True, include_rts=False,
+    ThirdLayerUsers = []
+    tweets_from_user = api.user_timeline(screen_name=user_from_list, count=999, exclude_replies=True, include_rts=False,
                                          # scans maximum 100 tweets from an account
                                          tweet_mode='extended')
     # here create CSV file and put metadata in it #
@@ -72,7 +75,9 @@ def Collector(CONSUMER_KEY, CONSUMER_SECRET,ACCESS_KEY, ACCESS_SECRET, seed_user
             FirstObj = getattr(tweets,""+First+"")
             SeconObj = getattr(tweets,""+Secon+"")
             ThirdObj = getattr(tweets,""+Third+"")
-            text = 
+            ThirdObj = str(ThirdObj)
+            text = bytes(ThirdObj, 'utf-8').decode('utf-8', 'ignore')
+            text = filterstring(text)
             FourtObj = getattr(tweets,""+Fourt+"")
             FifthObj = getattr(tweets,""+Fifth+"")
             SixthObj = getattr(tweets,""+Sixth+"")
@@ -90,6 +95,47 @@ def Collector(CONSUMER_KEY, CONSUMER_SECRET,ACCESS_KEY, ACCESS_SECRET, seed_user
         print("Usernames: ",usernames) # test
         for user in usernames:
             local_usersList.append(clearUsername(user))
+        print(local_usersList)
+    ###### Now from Local User List get one by one the users and fetch tweets from their timeline
+    for user in local_usersList:
+        try:
+            users_tweet = api.user_timeline(screen_name=user, count=999, exclude_replies=True, include_rts=False,
+                                         # scans maximum 100 tweets from an account
+                                             tweet_mode='extended')
+
+            with open("" + user + "_1_U_3rd.csv", 'a', encoding="utf-8") as f_object:
+                writer_object = writer(f_object)
+                for tweets in users_tweet:
+                    FirstObj = getattr(tweets, "" + First + "")
+                    SeconObj = getattr(tweets, "" + Secon + "")
+                    ThirdObj = getattr(tweets, "" + Third + "")
+                    ThirdObj = str(ThirdObj)
+                    text = bytes(ThirdObj, 'utf-8').decode('utf-8', 'ignore')
+                    text = filterstring(text)
+                    FourtObj = getattr(tweets, "" + Fourt + "")
+                    FifthObj = getattr(tweets, "" + Fifth + "")
+                    SixthObj = getattr(tweets, "" + Sixth + "")
+                    SevenObj = getattr(tweets, "" + Seven + "")
+                    EightObj = getattr(tweets, "" + Eight + "")
+                    writer_object.writerow(
+                        ["" + str(FirstObj) + "", "" + str(SeconObj) + "", "" + str(text) + "", "" + str(FourtObj) + "",
+                        "" + str(FifthObj) + "", "" + str(SixthObj) + "", "" + str(SevenObj) + "",
+                        "" + str(EightObj) + ""])
+
+            for tweets in users_tweet:
+                text = tweets.full_text
+                print("Text: ", text)  # test
+                usernames = list(filter(lambda word: word[0] == '@', text.split()))
+                for user in usernames:
+                    ThirdLayerUsers.append(clearUsername(user))
+                print("ThirdLayerList: ",ThirdLayerUsers)
+
+        except Exception as e:
+            print("Username Does Not exists")
+            print(e)
+
+
+
 
 
 
@@ -109,9 +155,9 @@ def CrawlerAction(CONSUMER_KEY, CONSUMER_SECRET,ACCESS_KEY, ACCESS_SECRET,seed_u
     for tweets in fetched_tweets:
         user = tweets.user
         if (user.statuses_count >= 600):     # TODO add checker if it is in list OR not
-            addtoList(user.id)
+            addtoList(user.screen_name)
             #print(user.id)
-    user = api.get_user(usersList[1])
+    #user = api.get_user(usersList[1])
     print(user) # test
     Collector(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_KEY, ACCESS_SECRET, seed_user, user.screen_name)
 
